@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: voltstake-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STARTING_BALANCE
+        value: 1000
+      - key: CORS_ORIGIN
+        sync: false
+      - key: XRPL_NETWORK_URL
+        value: wss://s.altnet.rippletest.net:51233
+      - key: VAULT_ADDRESS
+        sync: false
+      - key: VAULT_SEED
+        sync: false
+      - key: XRP_TO_VLT_RATE
+        value: 1000
+      - key: XRPL_POLL_INTERVAL_MS
+        value: 8000
+      - key: MIN_WITHDRAW_VLT
+        value: 100
+      - key: WITHDRAW_FEE_VLT
+        value: 10
+      - key: DB_PATH
+        value: /app/data/voltstake.db
+    disk:
+      name: voltstake-data
+      mountPath: /app/data
+      sizeGB: 1
