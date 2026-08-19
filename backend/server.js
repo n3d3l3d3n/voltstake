@@ -11,10 +11,37 @@ const { startDepositWatcher } = require('./services/depositWatcher');
 
 const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000' }));
+// Indispensable sur Render / Vercel pour gérer correctement les IPs et le rate limiter
+app.set('trust proxy', 1);
+
+// Gestion dynamique des origines CORS (autorise localhost et vos domaines distants)
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : ['http://localhost:3000'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Autorise les requêtes sans origine (comme Postman ou curl) et les domaines configurés
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        return callback(null, true);
+      }
+      return callback(new Error('Non autorisé par CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
+
 app.use(express.json());
 
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 120 });
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false
+});
 app.use(limiter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -26,7 +53,7 @@ app.use('/api/xrpl', xrplRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: 'Erreur serveur.' });
+  res.status(500).json({ error: err.message || 'Erreur serveur.' });
 });
 
 const PORT = process.env.PORT || 4000;
