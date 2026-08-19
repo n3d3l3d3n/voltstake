@@ -28,9 +28,3 @@ services:
         value: 100
       - key: WITHDRAW_FEE_VLT
         value: 10
-      - key: DB_PATH
-        value: /app/data/voltstake.db
-    disk:
-      name: voltstake-data
-      mountPath: /app/data
-      sizeGB: 1
