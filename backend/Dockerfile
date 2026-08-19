@@ -2,12 +2,13 @@ FROM node:20-slim
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
 RUN npm install --omit=dev
 
 COPY . .
 
-# Persistent volume mount point for the SQLite DB (mapped in render.yaml)
 VOLUME ["/app/data"]
 ENV DB_PATH=/app/data/voltstake.db
 
