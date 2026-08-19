@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   balance INTEGER NOT NULL DEFAULT 1000,
+  xrpl_destination_tag INTEGER UNIQUE,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -88,13 +89,17 @@ INSERT OR IGNORE INTO xrpl_sync_state (id, last_ledger_index, last_marker) VALUE
 `);
 
 // Lightweight migration: add XRPL columns to users if they don't exist yet
-// (safe to run repeatedly; SQLite errors are swallowed if the column is already there).
 function ensureColumn(table, column, definition) {
   const cols = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
   if (!cols.includes(column)) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
-ensureColumn('users', 'xrpl_destination_tag', 'INTEGER UNIQUE');
+
+// 1. Ajoute la colonne sans contrainte UNIQUE
+ensureColumn('users', 'xrpl_destination_tag', 'INTEGER');
+
+// 2. Applique l'unicité via un index dédié
+db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_xrpl_tag ON users(xrpl_destination_tag);`);
 
 module.exports = db;
